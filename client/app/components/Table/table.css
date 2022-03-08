@@ -1,0 +1,9 @@
+.table th {
+  white-space: nowrap;
+}
+
+.table tr:hover td {
+  background: #F9F9F9;
+  cursor: pointer;
+}
+
