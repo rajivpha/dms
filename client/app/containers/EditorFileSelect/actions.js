@@ -10,6 +10,12 @@ export const loadFilesRequest = payload => ({
   type: types.LOAD_FILES_REQUEST,
   payload,
 });
+
+export const loadPwdModal = payload => ({
+  type: types.LOAD_PWD_MODAL,
+  payload,
+});
+
 export const loadFilesSuccess = payload => ({
   type: types.LOAD_FILES_SUCCESS,
   payload,

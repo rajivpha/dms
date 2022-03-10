@@ -126,7 +126,7 @@ function* loginSuccessFunc(action) {
     const { token, data } = action.payload;
     yield put(setUser(data));
     yield put(setToken(token));
-    yield put(push('/'));
+    yield put(push('/admin/dashboard'));
   }
   yield put(enqueueSnackbar(snackbarData));
 }

@@ -6,10 +6,11 @@ import { compose } from 'redux';
 import queryString from 'query-string';
 import { createStructuredSelector } from 'reselect';
 import Dropzone from 'react-dropzone';
-
+import { toast } from 'react-toastify';
 import Dialog from '../../../components/Dialog/index';
 import PageContent from '../../../components/PageContent/PageContent';
 import { FaCheck, FaFolderOpen } from 'react-icons/fa';
+import { makeSelectToken } from '../../App/selectors';
 
 import * as mapDispatchToProps from '../actions';
 import {
@@ -25,8 +26,9 @@ import {
   makeSelectRenameFile,
   makeSelectShowRename,
   makeSelectQuery,
+  makeSelectLoadPwdModal,
 } from '../selectors';
-import { IMAGE_BASE } from '../../App/constants';
+import { API_BASE, IMAGE_BASE } from '../../App/constants';
 import BreadCrumb from '../../../components/Breadcrumb/Loadable';
 import DeleteDialog from '../../../components/DeleteDialog';
 import {
@@ -40,6 +42,7 @@ import {
   FaEdit,
 } from 'react-icons/fa';
 import { all } from 'redux-saga/effects';
+import { useHistory } from 'react-router-dom';
 
 const LinkComponent = ({ children, staticContext, ...props }) => (
   <div {...props}>{children}</div>
@@ -48,7 +51,30 @@ LinkComponent.propTypes = {
   children: PropTypes.node,
   staticContext: PropTypes.object,
 };
+const initialFormValues = {
+  'name': '',
+  'is_root': false,
+  'is_password_protected': false,
+  'is_global_password': false,
+  'set_password': '',
+};
 
+const validate = (values) => {
+
+  const errors = {};
+
+  if (!values.name) errors.name = 'Name is Required !';
+  // if (values.is_password_protected && (!values.is_global_password )) {
+
+  //   errors.is_global_password = 'Is Global Password is Required !';
+  // }
+  // else if(values.is_password_protected && !values.set_password){
+  //       errors.set_password = 'Password is Required !';
+
+  // }
+  return errors;
+
+};
 const FileList = ({
   addMediaRequest,
   all: { files, folders, self },
@@ -80,6 +106,8 @@ const FileList = ({
   setQueryValue,
   query,
   classes,
+  token,
+  loadNewFolderSuccess,
   ...props
 }) => {
   const [open, setOpen] = useState(false);
@@ -94,13 +122,105 @@ const FileList = ({
   const [deleteOpen, setdeleteOpen] = useState(false);
   const [fileOpen, setfileOpen] = useState(false);
 
+
+
   const [folderCheckbox, setfolderCheckbox] = useState(false);
   const [fileCheckbox, setfileCheckbox] = useState(false);
   const [selectedButton, setSelectedButton] = useState('');
 
   const [dialogOpen, setDialogOpen] = useState(false);
 
+const [formData, setFormData] = useState(initialFormValues);
+const [showPasswordModal, setShowPasswordModal] = useState(false);
+const [password, setPassword] = useState('');
+const [selectedFolder, setSelectedFolder]= useState();
+
+const history = useHistory();
+
+console.log(self)
+  const handleFormChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+  const handleFolderSave = async () => {
+
+    const errors = Object.values(validate(formData));
+    if (errors.length) {
+      errors.forEach(error => {
+        toast.error(error);
+      });
+    } else {
+      const response = await fetch(`${API_BASE}/files/folder/${self._id}`, {
+        method: 'POST',
+        body: JSON.stringify(formData),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: token,
+        },
+      });
+      
+      const json = await response.json();
+      console.log(json)
+      if(json.success) {
+        toast.success(json.msg);
+        handleClose();
+        loadNewFolderSuccess({data:json.data});
+      }
+      else{
+      toast.error(Object.values(json.errors)[0]);
+      }
+    }
+  };
+// const atob = (base64) => {
+//   return Buffer.from(base64, 'base64').toString('binary');
+// };
+
+  const handleFolderLink = each => {
+    setSelected('');
+    setSelectedFolder(each);
+    const searchq = queryString.stringify({ ...queryObj, path: each._id });
+    props.push({
+      search: searchq,
+    });
+  // }
+  };
+
+const handleOpenPassword = async ()=>{
+
+  let folderPath=selectedFolder?._id;
+  if(!folderPath) 
+    folderPath=new URLSearchParams(history.location.search).get("path");
+  loadFilesRequest({pquery:window.btoa(password), path: folderPath });
+
+  //  const response = await fetch(`${API_BASE}/files/folder/${selectedFolder._id}?pquery=${pwd}`, {
+  //       method: 'GET',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         Authorization: token,
+  //       },
+  //     });
+      
+  //     const json = await response.json();
+  //     console.log(json)
+  //     if(json.success) {
+  //       toast.success(json.msg);
+  //       setShowPasswordModal(false);
+  //       setPassword('')  
+        
+  //        const searchq = queryString.stringify({ ...queryObj, path: selectedFolder._id });
+  //         props.push({
+  //           search: searchq,
+  //       });
+  //   }
+  //     else{
+  //     toast.error(Object.values(json.errors)[0]);
+  //     }
+    }
+    
   useEffect(() => {
+
     if (!folderAdded) {
       setOpen(false);
       clearValue();
@@ -145,6 +265,7 @@ const FileList = ({
 
   const handleClose = () => {
     setOpen(false);
+    setFormData(initialFormValues)
   };
 
   const handleSave = () => {
@@ -158,14 +279,6 @@ const FileList = ({
 
   const handleFileUpload = (files, id) => {
     addMediaRequest({ file: files, folder_id: id });
-  };
-
-  const handleFolderLink = id => {
-    setSelected('');
-    const searchq = queryString.stringify({ ...queryObj, path: id });
-    props.push({
-      search: searchq,
-    });
   };
 
   const handleSingleClick = id => {
@@ -282,6 +395,7 @@ const FileList = ({
   ];
 
   const onClick = linkObj => {
+
     handleFolderLink(linkObj.id);
   };
 
@@ -369,6 +483,17 @@ const FileList = ({
     setDialogOpen(false);
   };
 
+  useEffect(() => {
+    setPassword("");
+  },[props.showPasswordModal])
+
+  const handlePasswordDialogClose=()=>{
+    props.push({
+      search: undefined,
+    });
+    props.loadPwdModal(false);
+  };
+
   return (
     <PageContent loading={loading}>
       <Dialog
@@ -376,16 +501,45 @@ const FileList = ({
         onClose={handleClose}
         title={`New Folder`}
         body={
-          <div className="w-5/6 sm:w-80">
-            <input
-              autoFocus
-              id="name"
-              type="text"
-              className="inputbox"
-              onChange={handleInput}
-              value={one.name}
-            />
-          </div>
+       <>
+            <div className='w-5/6 sm:w-80'>
+              <input
+                autoFocus
+                name='name'
+                type='text'
+                className='inputbox'
+                onChange={handleFormChange}
+                value={formData.name}
+              />
+            </div>
+            <div className='flex items-center'>
+              <input
+                name='is_password_protected'
+                type='checkbox'
+                onChange={() => setFormData({ ...formData, is_password_protected: !formData.is_password_protected })}
+                value={formData.is_password_protected}
+              />
+              <label>Enable Password</label>
+            </div>
+            {formData.is_password_protected && !formData.set_password && <div className='flex items-center'>
+              <input
+                id='name'
+                type='checkbox'
+                onChange={() => setFormData({ ...formData, is_global_password: !formData.is_global_password })}
+                value={formData.is_global_password}
+              />
+              <label>Use Global Password</label>
+            </div>}
+            {formData.is_password_protected && !formData.is_global_password && <div className='w-5/6 sm:w-80'>
+              <input
+                name='set_password'
+                type='password'
+                className='inputbox'
+                onChange={handleFormChange}
+                value={formData.set_password}
+              />
+            </div>}
+          </> 
         }
         actions={
           <>
@@ -396,7 +550,7 @@ const FileList = ({
               Cancel
             </button>
             <button
-              onClick={handleSave}
+              onClick={handleFolderSave}
               className="block btn margin-none text-white bg-blue-500 border border-blue-600 hover:bg-blue-600"
               disabled={folderAdded}
             >
@@ -405,7 +559,42 @@ const FileList = ({
           </>
         }
       />
-
+  <Dialog
+        open={props.showPasswordModal}
+        onClose={handlePasswordDialogClose}
+        title={`Password`}
+        body={
+       <>
+            <div className='w-5/6 sm:w-80'>
+              <input
+                autoFocus
+                name='name'
+                type='password'
+                className='inputbox'
+                onChange={(e)=>setPassword(e.target.value)}
+                value={password}
+              />
+            </div>
+          </> 
+        }
+        actions={
+          <>
+            <button
+              onClick={handlePasswordDialogClose}
+              className="block btn margin-none text-white bg-red-500 border border-red-600 hover:bg-red-600 mr-1"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleOpenPassword}
+              className="block btn margin-none text-white bg-blue-500 border border-blue-600 hover:bg-blue-600"
+              disabled={!password}
+            >
+              OK
+            </button>
+          </>
+        }
+      />
       <Dialog
         open={dialogOpen}
         onClose={handleDialogClose}
@@ -649,7 +838,7 @@ const FileList = ({
                 className={`${selected === each._id ? 'folder_media' : ''
                   } flex flex-col w-full h-36 text-center cursor-pointer overflow-hidden mt-10`}
                 onClick={() => handleSingleClick(each._id)}
-                onDoubleClick={() => handleFolderLink(each._id)}
+                onDoubleClick={() => handleFolderLink(each)}
                 onKeyDown={() => handleFolderLink(each._id)}
                 role="presentation"
               >
@@ -775,6 +964,8 @@ const mapStateToProps = createStructuredSelector({
   rename_file: makeSelectRenameFile(),
   showRename: makeSelectShowRename(),
   query: makeSelectQuery(),
+  token: makeSelectToken(),
+  showPasswordModal:makeSelectLoadPwdModal()
 });
 
 const withConnect = connect(mapStateToProps, { ...mapDispatchToProps, push });

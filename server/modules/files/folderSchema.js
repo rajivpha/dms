@@ -9,6 +9,7 @@ const folderSchema = new schema({
   is_password_protected: { type: Boolean, required: true, default: false },
   is_global_password: { type: Boolean, required: true, default: false },
   password: { type: String, required: false },
+  last_password_approved: { type: Date},
   is_deleted: { type: Boolean, required: true, default: false },
   deleted_at: { type: Date, required: false },
   deleted_by: { type: schema.Types.ObjectId, ref: 'user' },

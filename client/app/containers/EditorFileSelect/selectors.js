@@ -11,6 +11,10 @@ export const selectDomain = state => state.editorFileSelect || initialState;
  * Other specific selectors
  */
 
+export const makeSelectLoadPwdModal = () =>
+  createSelector(selectDomain, state => state.openPwdModal);
+
+
 export const makeSelectAll = () =>
   createSelector(selectDomain, state => state.all);
 

@@ -22,6 +22,9 @@ validations.sanitize = (req, res, next) => {
 validations.verifyPassword = async (req, res, next) => {
       try {
             const id = req?.body?._id || req?.params?.id;
+            const password =  req?.query?.pquery? Buffer.from(req.query.pquery, 'base64').toString('binary'): null;
+
+
             let errors ={}
               if (id == 'undefined' || id === 'root') {
             return next()  
@@ -32,15 +35,20 @@ validations.verifyPassword = async (req, res, next) => {
                   return otherHelper.sendResponse(res, httpStatus.BAD_REQUEST, false, null, null, 'Folder Not Found', null);
             }
             if (folderdetail?.is_password_protected) {
-                  if (!req.body.password) {
+                  // if(folderdetail.last_password_approved < Date.now()) {
+                  if (!password) {
                         errors.password = 'Password required';
+                        errors.password_required= true;
                         return otherHelper.sendResponse(res, httpStatus.BAD_REQUEST, false, null, errors, errors.password, null);
                   }
-                  const isMatch = await bcrypt.compare(req.body.password, folderdetail.password);
+                  const isMatch = await bcrypt.compare(password, folderdetail.password);
                   if (!isMatch) {
                         errors.password = 'Password incorrect';
                         return otherHelper.sendResponse(res, httpStatus.BAD_REQUEST, false, null, errors, errors.password, null);
                   }
+                  // await folderSch.findByIdAndUpdate({_id:id}, {$set:{ last_password_approved: Date.now()+ 900000  }})
+            // }
+
             }
             next();
       }

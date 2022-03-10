@@ -26,6 +26,7 @@ class Api {
         }
         const response = yield call(request, requestURL, options);
         yield put(onSuccess(response));
+        return response;
       } catch (err) {
         let error = null;
         try {
@@ -36,9 +37,12 @@ class Api {
           } else {
             yield put(onError(error));
           }
+            return error;
+
         } catch (e) {
           yield put(networkError(e));
           yield put(onError(e));
+          return e;
         }
       }
     };

@@ -5,6 +5,7 @@
  */
 
 export const LOAD_FILES_REQUEST = 'app/EditorFileSelect/LOAD_FILES_REQUEST';
+export const LOAD_PWD_MODAL = 'app/EditorFileSelect/LOAD_PWD_MODAL';
 export const LOAD_FILES_SUCCESS = 'app/EditorFileSelect/LOAD_FILES_SUCCESS';
 export const LOAD_FILES_FAILURE = 'app/EditorFileSelect/LOAD_FILES_FAILURE';
 

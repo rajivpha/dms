@@ -12,6 +12,7 @@ import {
 import * as types from './constants';
 import * as actions from './actions';
 import { enqueueSnackbar } from '../App/actions';
+import { toast } from 'react-toastify';
 
 function* loadFolders() {
   const token = yield select(makeSelectToken());
@@ -21,20 +22,55 @@ function* loadFiles(action) {
   const token = yield select(makeSelectToken());
   let query = '';
   const searchParams = yield select(makeSelectQuery());
+
+  let selectedFolder = yield select(makeSelectAll());
+
+  if(!selectedFolder.folders?.data?.length && !action.payload.pquery){
+    let pwdCheck=yield call(
+    Api.get(
+      `files/folder/${action.payload.path}`,
+        actions.loadFilesSuccess,
+        actions.loadFilesFailure,
+      token,
+    ),
+  );
+
+  if(pwdCheck?.errors?.password_required){
+        yield put(actions.loadPwdModal(true));
+        toast.error(pwdCheck?.msg)
+    return;
+  }else{
+    selectedFolder=pwdCheck
+  }
+  }
+  let isPasswordProtected = selectedFolder.folders?.data?.find(dat => dat._id == action.payload?.path);
+
+  if (isPasswordProtected?.is_password_protected && !action.payload.pquery) {
+    yield put(actions.loadPwdModal(true));
+    return;
+  };
+
+
   if (searchParams) {
     Object.keys(searchParams).map(each => {
       query = `${query}&${each}=${searchParams[each]}`;
       return null;
     });
   }
-  yield call(
+
+  if (action.payload.pquery) query += `&pquery=${action.payload.pquery}`;
+
+  const files=yield call(
     Api.get(
       `files/folder/${action.payload.path}?${query}`,
-      actions.loadFilesSuccess,
-      actions.loadFilesFailure,
+        actions.loadFilesSuccess,
+        actions.loadFilesFailure,
       token,
     ),
   );
+
+  if(files?.success) yield put(actions.loadPwdModal(false));
+  else toast.error(files?.msg);
 }
 
 function* addMedia(action) {

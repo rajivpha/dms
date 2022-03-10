@@ -18,7 +18,6 @@ import injectSaga from 'utils/injectSaga';
 import injectReducer from 'utils/injectReducer';
 import UsernameInput from './components/UsernameInput';
 import PasswordInput from './components/PasswordInput';
-import { FB_APP_ID, FB_APP_FIELDS, GOOGLE_CLIENT_ID } from '../App/constants';
 import reducer from './reducer';
 import saga from './saga';
 import * as mapDispatchToProps from './actions';
@@ -31,17 +30,12 @@ import {
   makeSelectLoadingObj,
   makeSelectTwoFactor,
 } from './selectors';
-import Modal from '../../components/Modal';
 import '../../assets/styles/loading.css';
 
 const LoginUserPage = props => {
   const {
-    classes,
     loginRequest,
     loading,
-    errors,
-    emailErr,
-    passwordErr,
     loadingObj: { loggingUser, sendingCode },
     helperObj: { showEmailTwoFactor, showGoogleTwoFactor },
     setOpen,
@@ -86,32 +80,7 @@ const LoginUserPage = props => {
           Login
           </title>
       </Helmet>
-      <Modal
-        open={showEmailTwoFactor || showGoogleTwoFactor}
-        handleClose={handleClose}
-        handleUpdate={handleSubmitCode}
-        buttonLabel2={
-          sendingCode ? (
-            <>
-              <div className="flex text-center justify-center">
-                <div className="loading_wrapper">
-                  <span className="font-bold mr-2 my-auto text-white">
-                    Sending
-                  </span>
-                  <div className="dot-elastic" />{' '}
-                </div>
-              </div>
-            </>
-          ) : (
-              'Continue'
-            )
-        }
-        width="sm"
-      >
-      
-
     
-      </Modal>
       <div className="container mx-auto mb-10">
         <div className="mx-auto max-w-md p-5 md:p-16">
           <h1 className="font-bold text-2xl">LOGIN</h1>{' '}

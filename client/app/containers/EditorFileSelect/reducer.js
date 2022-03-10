@@ -39,6 +39,7 @@ export const initialState = {
   fileRenameLoading: false,
   query: { search: '' },
   errors: {},
+  openPwdModal: false,
 };
 
 /* eslint-disable default-case, no-param-reassign */
@@ -203,6 +204,8 @@ const editorFileSelectReducer = (state = initialState, action) =>
       case types.SET_QUERY_VALUE:
         draft.query[action.payload.key] = action.payload.value;
         break;
+      case types.LOAD_PWD_MODAL:
+        draft.openPwdModal=action.payload
     }
   });
 
